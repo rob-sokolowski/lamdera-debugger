@@ -104,7 +104,7 @@ updateFromFrontend sessionId clientId msg model =
                         Just val ->
                             val + 1
             in
-            ( BackendModel_ { model_ | codes = Dict.insert 1 newVal model_.codes }
+            ( BackendModel_ { model_ | codes = Dict.insert 2 newVal model_.codes }
             , send <| cmd_ (Msg_ToBackend MessageType2)
             )
 
@@ -121,7 +121,7 @@ updateFromFrontend sessionId clientId msg model =
                         Just val ->
                             val + 1
             in
-            ( BackendModel_ { model_ | codes = Dict.insert 1 newVal model_.codes }
+            ( BackendModel_ { model_ | codes = Dict.insert 3 newVal model_.codes }
             , send <| cmd_ (Msg_ToBackend MessageType3)
             )
 
@@ -138,6 +138,6 @@ updateFromFrontend sessionId clientId msg model =
                         Just val ->
                             val + 1
             in
-            ( BackendModel_ { model_ | codes = Dict.insert 1 newVal model_.codes }
+            ( BackendModel_ { model_ | codes = Dict.insert 4 newVal model_.codes }
             , send <| cmd_ (Msg_ToBackend MessageType4)
             )
