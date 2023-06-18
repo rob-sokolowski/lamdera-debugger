@@ -11,9 +11,7 @@ import Url exposing (Url)
 type alias FrontendModel =
     { key : Key
     , message : String
-    , backendModelHist : List BackendModel
-    , backendMsgHist : List BackendMsg
-    , toBackendMsgHist : List ToBackend
+    , debugStrs : List String
     }
 
 
@@ -37,12 +35,17 @@ type ToBackend
 
 type BackendMsg
     = NoOpBackendMsg
-    | Debug_Log ClientId ToBackend
+    | Debug_Log Debug_Msg
+
+
+type Debug_Msg
+    = Debug_ToBackend ToBackend
+    | Debug_BackendMsg Debug_Msg
 
 
 type ToFrontend
     = NoOpToFrontend
-    | Debugger_Update ToBackend BackendModel
+    | Debug_UpdateFrontend Debug_Msg BackendModel
 
 
 send : msg -> Cmd msg

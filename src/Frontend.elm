@@ -33,9 +33,7 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
-      , backendModelHist = []
-      , backendMsgHist = []
-      , toBackendMsgHist = []
+      , debugStrs = []
       }
     , Cmd.none
     )
@@ -87,11 +85,12 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
-        Debugger_Update toBackend backendModel ->
-            ( { model
-                | toBackendMsgHist = toBackend :: model.toBackendMsgHist
-                , backendModelHist = backendModel :: model.backendModelHist
-              }
+        Debug_UpdateFrontend debug_msg backendModel ->
+            let
+                debugStr =
+                    Debug.toString debug_msg ++ " " ++ Debug.toString backendModel
+            in
+            ( { model | debugStrs = debugStr :: model.debugStrs }
             , Cmd.none
             )
 
@@ -139,29 +138,5 @@ viewElement model =
 
 viewDebug : Model -> Element FrontendMsg
 viewDebug model =
-    let
-        modelHistoryStrs : List String
-        modelHistoryStrs =
-            List.map (\log -> Debug.toString log) model.backendModelHist
-
-        toBackendMsgStrs : List String
-        toBackendMsgStrs =
-            List.map (\log -> Debug.toString log) model.toBackendMsgHist
-
-        -- TODO: This isn't correct because we need to weave in the order of backend msgs too, but even so
-        -- I don't think we can always preserve order order of ToBackend / Backend Msgs and BackendModel state
-        tuples : List ( String, String )
-        tuples =
-            List.map2 (\mdls msgs -> ( mdls, msgs )) modelHistoryStrs toBackendMsgStrs
-    in
-    column [ width fill, spacing 10, centerX ] <|
-        List.map2
-            (\( mdl, msg ) i ->
-                row [ Border.width 1, Border.color (rgb 0 0 0), Border.rounded 5, spacing 5 ]
-                    [ text <| String.fromInt i ++ ":"
-                    , paragraph [] [ text msg ]
-                    , paragraph [] [ text mdl ]
-                    ]
-            )
-            tuples
-            (List.reverse <| List.range 1 (List.length tuples))
+    column [ width fill, spacing 10, centerX ]
+        (List.map (\debugStr -> paragraph [] [ text debugStr ]) model.debugStrs)

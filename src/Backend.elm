@@ -1,7 +1,7 @@
 module Backend exposing (..)
 
 import Dict
-import Lamdera exposing (ClientId, SessionId, sendToFrontend)
+import Lamdera exposing (ClientId, SessionId, broadcast, sendToFrontend)
 import Types exposing (..)
 
 
@@ -9,13 +9,56 @@ type alias Model =
     BackendModel
 
 
+shouldDebug =
+    True
+
+
 app =
-    Lamdera.backend
-        { init = init
-        , update = update
-        , updateFromFrontend = updateFromFrontend
-        , subscriptions = \m -> Sub.none
-        }
+    if shouldDebug then
+        Lamdera.backend
+            { init = init
+            , update = update_debug
+            , updateFromFrontend = updateFromFrontend_debug
+            , subscriptions = \m -> Sub.none
+            }
+
+    else
+        Lamdera.backend
+            { init = init
+            , update = update
+            , updateFromFrontend = updateFromFrontend
+            , subscriptions = \m -> Sub.none
+            }
+
+
+update_debug : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
+update_debug msg model =
+    let
+        ( model_, cmd_ ) =
+            case msg of
+                Debug_Log debug_Msg ->
+                    ( model, broadcast <| Debug_UpdateFrontend debug_Msg model )
+
+                _ ->
+                    update msg model
+    in
+    ( model_
+    , cmd_
+    )
+
+
+updateFromFrontend_debug : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontend_debug sessionId clientId msg model =
+    let
+        ( model_, cmd_ ) =
+            updateFromFrontend sessionId clientId msg model
+    in
+    ( model_
+    , Cmd.batch
+        [ send <| Debug_Log (Debug_ToBackend msg)
+        , cmd_
+        ]
+    )
 
 
 init : ( Model, Cmd BackendMsg )
@@ -32,25 +75,13 @@ update msg model =
         NoOpBackendMsg ->
             ( model, Cmd.none )
 
-        Debug_Log clientId toBackend ->
-            ( model, sendToFrontend clientId (Debugger_Update toBackend model) )
-
-
-isDebugEnabled =
-    True
+        Debug_Log debug_Msg ->
+            -- Noop
+            ( model, Cmd.none )
 
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
-    let
-        cmd_ : Cmd BackendMsg
-        cmd_ =
-            if isDebugEnabled then
-                send (Debug_Log clientId msg)
-
-            else
-                Cmd.none
-    in
     case msg of
         NoOpToBackend ->
             ( model, Cmd.none )
@@ -66,5 +97,5 @@ updateFromFrontend sessionId clientId msg model =
                             val + 1
             in
             ( { model | counts = Dict.insert laneNo newVal model.counts }
-            , cmd_
+            , Cmd.none
             )
