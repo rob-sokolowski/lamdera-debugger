@@ -8,7 +8,6 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Lamdera exposing (sendToBackend)
-import PortDefs exposing (jsonify)
 import Types exposing (..)
 import Url
 
@@ -33,7 +32,9 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
-      , debugState = Nothing
+      , backendModelHist = []
+      , backendMsgHist = []
+      , toBackendMsgHist = []
       }
     , Cmd.none
     )
@@ -60,19 +61,19 @@ update msg model =
         NoOpFrontendMsg ->
             ( model, Cmd.none )
 
-        UserClickedMessageCode int ->
-            case int of
+        UserClickIncrement laneNo ->
+            case laneNo of
                 1 ->
-                    ( model, sendToBackend MessageType1 )
+                    ( model, sendToBackend <| IncrementLane 1 )
 
                 2 ->
-                    ( model, sendToBackend MessageType2 )
+                    ( model, sendToBackend <| IncrementLane 2 )
 
                 3 ->
-                    ( model, sendToBackend MessageType3 )
+                    ( model, sendToBackend <| IncrementLane 3 )
 
                 4 ->
-                    ( model, sendToBackend MessageType4 )
+                    ( model, sendToBackend <| IncrementLane 4 )
 
                 _ ->
                     -- noop
@@ -85,8 +86,11 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
-        UpdateDebugger backendModel ->
-            ( { model | debugState = Just backendModel }
+        Debugger_Update toBackend backendModel ->
+            ( { model
+                | toBackendMsgHist = toBackend :: model.toBackendMsgHist
+                , backendModelHist = backendModel :: model.backendModelHist
+              }
             , Cmd.none
             )
 
@@ -105,7 +109,7 @@ viewElement model =
         attrs code =
             [ width shrink
             , height shrink
-            , Events.onClick (UserClickedMessageCode code)
+            , Events.onClick (UserClickIncrement code)
             , Background.color (rgb 100 100 100)
             , Border.width 1
             , Border.color (rgb 0 0 0)
@@ -129,6 +133,6 @@ viewElement model =
         , el (attrs 3) <| text "Click to send message type 3 to backend"
         , el (attrs 4) <| text "Click to send message type 4 to backend"
         , column [ width fill ]
-            [ paragraph [] [ text <| Debug.toString model.debugState ]
+            [ paragraph [] [ text <| Debug.toString model.backendModelHist ]
             ]
         ]

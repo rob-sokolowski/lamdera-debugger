@@ -11,50 +11,38 @@ import Url exposing (Url)
 type alias FrontendModel =
     { key : Key
     , message : String
-    , debugState : Maybe BackendModel
+    , backendModelHist : List BackendModel
+    , backendMsgHist : List BackendMsg
+    , toBackendMsgHist : List ToBackend
     }
 
 
-type alias InnerBackendModel =
-    { history : List BackendModel
-    , msgs : List Msg_
-    , codes : Dict Int Int
+type alias BackendModel =
+    { counts : Dict Int Int -- lane # => incrementer value
     }
-
-
-type BackendModel
-    = BackendModel_ InnerBackendModel
-
-
-type Msg_
-    = Msg_ToFrontend ToFrontend
-    | Msg_ToBackend ToBackend
-    | Msg_Backend BackendMsg
 
 
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
-    | UserClickedMessageCode Int
+    | UserClickIncrement Int
     | NoOpFrontendMsg
 
 
 type ToBackend
     = NoOpToBackend
-    | MessageType1
-    | MessageType2
-    | MessageType3
-    | MessageType4
+      -- Not: 'lane' refers to which value to increment, so 4 lanes = 4 separate counters
+    | IncrementLane Int
 
 
 type BackendMsg
     = NoOpBackendMsg
-    | LogMsg ClientId Msg_
+    | Debug_Log ClientId ToBackend
 
 
 type ToFrontend
     = NoOpToFrontend
-    | UpdateDebugger BackendModel
+    | Debugger_Update ToBackend BackendModel
 
 
 send : msg -> Cmd msg
