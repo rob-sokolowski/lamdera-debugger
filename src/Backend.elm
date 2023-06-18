@@ -37,6 +37,7 @@ update_debug msg model =
         ( model_, cmd_ ) =
             case msg of
                 Debug_Log debug_Msg ->
+                    -- Note: Don't call update here, to avoid loop
                     ( model, broadcast <| Debug_UpdateFrontend debug_Msg model )
 
                 _ ->
