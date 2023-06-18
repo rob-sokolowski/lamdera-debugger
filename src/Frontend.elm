@@ -7,6 +7,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
+import Json.Encode as JE
 import Lamdera exposing (sendToBackend)
 import Types exposing (..)
 import Url
@@ -132,7 +133,35 @@ viewElement model =
         , el (attrs 2) <| text "Click to send message type 2 to backend"
         , el (attrs 3) <| text "Click to send message type 3 to backend"
         , el (attrs 4) <| text "Click to send message type 4 to backend"
-        , column [ width fill ]
-            [ paragraph [] [ text <| Debug.toString model.backendModelHist ]
-            ]
+        , viewDebug model
         ]
+
+
+viewDebug : Model -> Element FrontendMsg
+viewDebug model =
+    let
+        modelHistoryStrs : List String
+        modelHistoryStrs =
+            List.map (\log -> Debug.toString log) model.backendModelHist
+
+        toBackendMsgStrs : List String
+        toBackendMsgStrs =
+            List.map (\log -> Debug.toString log) model.toBackendMsgHist
+
+        -- TODO: This isn't correct because we need to weave in the order of backend msgs too, but even so
+        -- I don't think we can always preserve order order of ToBackend / Backend Msgs and BackendModel state
+        tuples : List ( String, String )
+        tuples =
+            List.map2 (\mdls msgs -> ( mdls, msgs )) modelHistoryStrs toBackendMsgStrs
+    in
+    column [ width fill, spacing 10, centerX ] <|
+        List.map2
+            (\( mdl, msg ) i ->
+                row [ Border.width 1, Border.color (rgb 0 0 0), Border.rounded 5, spacing 5 ]
+                    [ text <| String.fromInt i ++ ":"
+                    , paragraph [] [ text msg ]
+                    , paragraph [] [ text mdl ]
+                    ]
+            )
+            tuples
+            (List.reverse <| List.range 1 (List.length tuples))
